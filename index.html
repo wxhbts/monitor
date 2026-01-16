@@ -14,26 +14,6 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
     <script>
-        // Fetch config immediately
-        async function fetchConfig() {
-            try {
-                const response = await fetch('/api/config');
-                const config = await response.json();
-                if (config.siteName) {
-                    document.title = config.siteName;
-                    const headerEl = document.getElementById('page-header');
-                    if (headerEl) headerEl.innerText = config.siteName;
-                }
-                if(config.siteIcon) {
-                    const favicon = document.querySelector('link[rel="icon"]');
-                    if(favicon) favicon.href = config.siteIcon;
-                }
-            } catch (err) {
-                console.error("Error fetching config:", err);
-            }
-        }
-        fetchConfig();
-
         tailwind.config = {
             theme: {
                 extend: {
@@ -204,16 +184,10 @@
                     <option value="day">1 天</option>
                 </select>
             </div>
-             <div class="flex items-center space-x-2">
-                <label for="zoneId" class="text-sm font-medium text-foreground">站点:</label>
-                <select id="zoneId" onchange="refreshData()" class="h-9 w-[180px] rounded-md border border-border bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <option value="*">全部站点</option>
-                </select>
-            </div>
+             
            <div class="flex items-center space-x-2">
             <label for="cdnSelector" class="text-sm font-medium text-foreground">CDN服务商:</label>
             <select id="cdnSelector" onchange="if(this.value) window.location.href=this.value" class="h-9 w-[240px] rounded-md border border-border bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                <!-- 假设 EO 对应的页面是 eo.html，ESA 对应的页面是 esa.html -->
                 <option value="" selected >腾讯云 EO 监控</option>
                 <option value="aliesa.html" >阿里云 ESA 监控</option>
                 <option value="cloudflare.html">Cloudflare 监控</option>
@@ -1396,53 +1370,7 @@
             return { unit: units[i], divisor: Math.pow(k, i) };
         }
 
-        /** Tool Functions **/
-
-        async function fetchZones() {
-            try {
-                const response = await fetch('/api/zones');
-                const result = await response.json();
-                
-                const select = document.getElementById('zoneId');
-                // Keep the current selection if possible, or default to *
-                const currentVal = '*';
-                select.innerHTML = ''; 
-
-                // Always add "All Zones" option
-                const allOption = document.createElement('option');
-                allOption.value = "*";
-                allOption.text = "全部站点";
-                select.appendChild(allOption);
-
-                if (result.Zones && result.Zones.length > 0) {
-                    result.Zones.forEach(zone => {
-                        const option = document.createElement('option');
-                        option.value = zone.ZoneId;
-                        let text = zone.ZoneName;
-                        if (text === 'default-pages-zone') {
-                            text += ' (Pages站点)';
-                        }
-                        option.text = text;
-                        select.appendChild(option);
-                    });
-                }
-                
-                // Restore selection if it exists in new options, otherwise default to *
-                if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
-                    select.value = currentVal;
-                } else {
-                    select.value = "*";
-                }
-
-            } catch (err) {
-                //console.error("Error fetching zones:", err);
-                //const select = document.getElementById('zoneId');
-                // If error, ensure we have at least the default * option
-                //if (select.options.length === 0 || select.options[0].value !== '*') {
-                  //   select.innerHTML = '<option value="*">获取站点失败 (默认为全部)</option>';
-               // }
-            }
-        }
+        
 
         ////ENTRANCE////
         async function initDashboard() {
@@ -1482,7 +1410,6 @@
             chartFunctionCpu = echarts.init(document.getElementById('chart_function_cpu'));
             chartPagesCloudFunctionRequests = echarts.init(document.getElementById('chart_pages_cloud_function_requests'));
 
-            await fetchZones(); // Fetch zones first
             await refreshData();
         }
 
@@ -1498,7 +1425,8 @@
                 // Get ZoneId if selected
                 const zoneIdElement = document.getElementById('zoneId');
                 const zoneId = zoneIdElement ? zoneIdElement.value : null;
-                const url = zoneId && zoneId !== '*' ? `/api/pages/build-count?zoneId=${zoneId}` : '/api/pages/build-count';
+				const t = Date.now();
+                const url = zoneId && zoneId !== '*' ? `/api/pages/build-count?zoneId=${zoneId}` : '/api/pages/build-count?t='+ t;
 
                 const response = await fetch(url);
                 const result = await response.json();
@@ -1610,7 +1538,8 @@
                 // Get ZoneId if selected
                 const zoneIdElement = document.getElementById('zoneId');
                 const zoneId = zoneIdElement ? zoneIdElement.value : null;
-                const url = zoneId && zoneId !== '*' ? `/api/pages/cloud-function-monthly-stats?zoneId=${zoneId}` : '/api/pages/cloud-function-monthly-stats';
+				const t = Date.now();
+                const url = zoneId && zoneId !== '*' ? `/api/pages/cloud-function-monthly-stats?zoneId=${zoneId}` : '/api/pages/cloud-function-monthly-stats?t=' + t;
                 
                 const response = await fetch(url);
                 const result = await response.json();
