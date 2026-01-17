@@ -5,6 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>腾讯云EdgeOne 监控大屏</title>
+	<script>
+        // 立即执行，检查本地存储或系统偏好
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <!-- Tailwind CSS for Shadcn/UI style -->
     <script src="https://eo.cydiaa.com/?url=https://cdn.tailwindcss.com"></script>
     <script src="https://eo.cydiaa.com/?url=https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>

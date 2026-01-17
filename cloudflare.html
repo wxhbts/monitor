@@ -5,6 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloudflare 监控大屏</title>
+    <script>
+        // 立即执行，检查本地存储或系统偏好
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <!-- Tailwind CSS -->
     <script src="https://eo.cydiaa.com/?url=https://cdn.tailwindcss.com"></script>
     <script src="https://eo.cydiaa.com/?url=https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -95,20 +103,18 @@ html.dark {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
 	*, ::after, ::before {
   border-color: hsl(var(--border));
-}
-
-}
-}
+}}
 </style>
 
 </head>
 <body class="bg-background text-foreground min-h-screen p-8 transition-colors">
 
     <!-- Loading Progress Bar -->
-    <div id="loading-progress-container" class="fixed top-0 left-0 w-full h-1 z-50 bg-transparent pointer-events-none">
-        <div id="loading-progress-bar" class="h-full bg-blue-500 transition-all duration-300 ease-out w-0"></div>
+    <div id="loading-progress-container-2" class="fixed top-0 left-0 w-full h-1 z-50 bg-transparent pointer-events-none">
+        <div id="loading-progress-bar-2" class="h-full bg-blue-500 transition-all duration-300 ease-out w-0"></div>
     </div>
     <div class="max-w-7xl mx-auto space-y-8">
         
@@ -127,7 +133,7 @@ html.dark {
     <button
         id="themeToggle"
         onclick="toggleTheme()"
-        class="h-9 px-4 rounded-md border bg-card text-card-foreground hover:bg-accent transition text-sm"
+        class="h-9 px-4 rounded-md border bg-card text-card-foreground hover:bg-accent transition text-sm cursor-pointer"
     >
         🌙 夜间模式
     </button>
@@ -163,22 +169,22 @@ html.dark {
             <!-- Custom Time Inputs -->
             <div id="customTimeInputs" class="hidden flex-wrap items-center gap-2 mt-2 w-full sm:w-auto">
                 <div class="flex items-center space-x-1">
-                    <input type="number" id="customDays" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm" min="0" max="31">
+                    <input type="number" id="customDays" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200" min="0" max="31">
                     <span class="text-xs">天</span>
                 </div>
                 <div class="flex items-center space-x-1">
-                    <input type="number" id="customHours" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm" min="0" max="23">
+                    <input type="number" id="customHours" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200" min="0" max="23">
                     <span class="text-xs">小时</span>
                 </div>
                 <div class="flex items-center space-x-1">
-                    <input type="number" id="customMinutes" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm" min="0" max="59">
+                    <input type="number" id="customMinutes" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200" min="0" max="59">
                     <span class="text-xs">分</span>
                 </div>
                 <div class="flex items-center space-x-1">
-                    <input type="number" id="customSeconds" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm" min="0" max="59">
+                    <input type="number" id="customSeconds" placeholder="0" class="h-8 w-16 rounded-md border border-slate-200 px-2 text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200" min="0" max="59">
                     <span class="text-xs">秒</span>
                 </div>
-                <button onclick="refreshData()" class="h-8 px-3 bg-slate-900 text-white rounded-md text-xs hover:bg-slate-800">应用</button>
+                <button onclick="refreshData()" class="h-8 px-3 bg-slate-900 text-white rounded-md text-xs hover:bg-slate-800 cursor-pointer border border-slate-700">应用</button>
                 <span id="timeRangeError" class="text-red-500 text-xs font-medium ml-2"></span>
             </div>
             <div class="flex items-center space-x-2">
@@ -483,7 +489,8 @@ html.dark {
         let chartTopRequestCountry = null;
         let chartTopRequestDomain = null;
         let chartTopRequestResourceType = null;
-		let chartTopcc = null;
+		let chartTopRequestSip = null;
+		let chartTopRequestzym = null;
 
         const countryMap = {
             'CN': '中国大陆', 'AF': '阿富汗', 'MV': '马尔代夫', 'AM': '亚美尼亚', 'MN': '蒙古', 'AZ': '阿塞拜疆',
@@ -681,7 +688,7 @@ html.dark {
                     const errorEl = document.getElementById('timeRangeError');
 
                     if (totalMs > maxMs) {
-                        if (errorEl) errorEl.innerText = '自定义时间范围不能超过 31 天，已自动为您调整为 3 天。';
+                        if (errorEl) errorEl.innerText = '自定义时间范围不能超过 31 天，已自动为您调整为 31 天。';
                         totalMs = maxMs;
                     } else {
                         if (errorEl) errorEl.innerText = '';
@@ -950,7 +957,7 @@ html.dark {
                 if (!el.id.includes('growth')) el.innerText = '加载中...';
             });
 
-            const progressBar = document.getElementById('loading-progress-bar');
+            const progressBar = document.getElementById('loading-progress-bar-2'); // Fixed ID to avoid conflict if running in same environment
             if (progressBar) {
                 progressBar.style.width = '0%';
                 progressBar.classList.remove('bg-red-500');
@@ -997,8 +1004,6 @@ html.dark {
                         // 立即更新对应的 UI 模块 (实现增量渲染)
                         const section = getSection(metric);
                         if (section && updateMap[section]) {
-                            // 注意：update 函数通常会读取 results 中该 section 下的所有 metric
-                            // 随着数据陆续返回，图表会逐步完善
                             updateMap[section](results);
                         }
                     }
@@ -1078,6 +1083,7 @@ html.dark {
             const option = {
                 tooltip: { 
                     trigger: 'axis', 
+					
                     formatter: (params) => {
                         let res = params[0].axisValue + '<br/>';
                         params.forEach(param => {
@@ -1136,21 +1142,22 @@ html.dark {
                 yAxis: { type: 'value', name: unit },
                 series: series
             };
-            updateCacheHitRate(results);
-            // 重要：第二个参数 true 表示不合并 (notMerge)，清除旧状态
-            chartTraffic.setOption(option, true);
-
+            
+            // Ensure chartTraffic is initialized and disposed safely if needed
+            if (chartTraffic && chartTraffic.clear) {
+                updateCacheHitRate(results);
+                // 重要：第二个参数 true 表示不合并 (notMerge)，清除旧状态
+                chartTraffic.setOption(option, true);
+            }
         }
 		
 		function updateCacheHitRate(results) {
     const hitRateEl = document.getElementById('kpi_cache_hit_rate');
     if (!hitRateEl) return;
 
-    // 你现在可用的两个量：缓存请求数 / 总请求数 = 缓存命中比例
     const cached = results['l7Flow_cachedRequests']?.sum;
     const total = results['l7Flow_request']?.sum;
 
-    // 数据没齐时，给个“加载中”或保持上次值都行；这里用加载中更直观
     if (typeof cached !== 'number' || typeof total !== 'number' || total <= 0) {
         hitRateEl.innerText = '加载中...';
         return;
@@ -1268,10 +1275,13 @@ html.dark {
                 yAxis: { type: 'value', name: unit },
                 series: series
             };
-            updateCacheHitRate(results);
-            // 重要：第二个参数 true 表示不合并
-            chartRequests.setOption(option, true);
+            
+            if (chartRequests) {
+               updateCacheHitRate(results);
+               chartRequests.setOption(option, true);
+            }
         }
+		
 		function updateEdgeFunctionsSection(results) {
             const metrics = metricsConfig.edgeFunctions;
             
@@ -1313,7 +1323,6 @@ html.dark {
                     if (prevData) {
                         const curVal = data.sum;
                         const preVal = prevData.sum;
-                        // Inverse if ms (CPU Cost)
                         renderGrowth(config.kpiId, curVal, preVal, config.unitType === 'ms');
                     }
                 }
@@ -1358,7 +1367,6 @@ html.dark {
   bottom: 0,
   icon: 'circle',
   formatter: function (name) {
-    // 根据 label 反查 metric key
     const metric = Object.keys(metricLabels)
       .find(k => metricLabels[k] === name);
 
@@ -1379,16 +1387,7 @@ html.dark {
     }
   }
 },
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
+
                     grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
                     xAxis: { type: 'category', boundaryGap: false, data: data.timeData },
                     yAxis: { type: 'value', name: unit },
@@ -1430,7 +1429,7 @@ html.dark {
                 divisor = best.divisor;
             }
 
-            const yAxisData = sortedData.map(item => mapObject?.[item.Key] || item.Key).reverse(); //问题点：没对“字段不存在”的短横杠做判断
+            const yAxisData = sortedData.map(item => mapObject?.[item.Key] || item.Key).reverse();
             const seriesData = sortedData.map(item => {
                 const val = item.Value / divisor;
                 return (divisor === 1) ? val : val.toFixed(2);
@@ -1461,10 +1460,7 @@ html.dark {
                              formattedVal = formatBytes(rawVal);
                          } else {
                              const fVal = formatCount(rawVal);
-                             // Append '次' if not present in unit (formatCount returns unit, but we might want explicit '次')
-                             // formatCount returns "1.23 万". "1.23 万次" sounds good.
-                             // "500" -> "500 次".
-                             formattedVal = fVal + (fVal.includes('千') || fVal.includes('万') || fVal.includes('亿') ? '' : '');
+                             formattedVal = fVal; 
                          }
                          
                          return `${name}<br/>${param.marker}${label}: ${formattedVal}`;
@@ -1493,14 +1489,13 @@ html.dark {
     label: {
       show: true,
       position: 'right',
-      backgroundColor: 'transparent', // ⭐ 关键：去掉深色背景
+      backgroundColor: 'transparent',
       padding: 0,
       color: isDark ? '#e5e7eb' : '#111827',
 	  fontWeight: 500
     }
   }
 ]
-
             };
             chartInstance.setOption(option);
         };
@@ -1511,7 +1506,6 @@ html.dark {
 
             if (!data || data.type !== 'top' || !data.data) return;
 
-            // Map data to ECharts format
             const mapData = data.data.map(item => {
                 const name = countryMap[item.Key] || codeToMapName[item.Key] || item.Key;
                 return {
@@ -1559,16 +1553,11 @@ html.dark {
             chartTopMap.setOption(option,true);
         }
 
-        //6.有使用
         function updateTopAnalysisSection(results) {
             updateTopMapChart(results);
-
-            // Flux Charts
             renderTopChart(results, chartTopCountry, 'l7Flow_outFlux_country', countryMap);
             renderTopChart(results, chartTopDomain, 'l7Flow_outFlux_domain');
             renderTopChart(results, chartTopResourceType, 'l7Flow_outFlux_resourceType');
-
-            // Request Charts
             renderTopChart(results, chartTopRequestCountry, 'l7Flow_request_country', countryMap);
             renderTopChart(results, chartTopRequestDomain, 'l7Flow_request_domain');
             renderTopChart(results, chartTopRequestResourceType, 'l7Flow_request_resourceType');
@@ -1590,60 +1579,45 @@ html.dark {
             chartTopRequestCountry && chartTopRequestCountry.resize();
             chartTopRequestDomain && chartTopRequestDomain.resize();
             chartTopRequestResourceType && chartTopRequestResourceType.resize();
-			chartTopcc && chartTopcc.resize();
+			chartTopRequestSip && chartTopRequestSip.resize();
+			chartTopRequestzym && chartTopRequestzym.resize();
 			chartFunctionRequests && chartFunctionRequests.resize();
             chartFunctionCpu && chartFunctionCpu.resize();
-			
-			
         });
 
         // Start - Entrance
         initDashboard();
-		// 🌙 夜间模式逻辑
-function applyTheme(theme) {
-    const html = document.documentElement;
-    const btn = document.getElementById('themeToggle');
+		
+        // 🌙 夜间模式逻辑
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const btn = document.getElementById('themeToggle');
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                btn.innerText = '☀️ 日间模式';
+            } else {
+                html.classList.remove('dark');
+                btn.innerText = '🌙 夜间模式';
+            }
+            localStorage.setItem('theme', theme);
+            // 刷新 ECharts 主题
+            setTimeout(() => {
+               rerenderChartsByTheme();
+            }, 50);
+        }
 
-    if (theme === 'dark') {
-        html.classList.add('dark');
-        btn.innerText = '☀️ 日间模式';
-    } else {
-        html.classList.remove('dark');
-        btn.innerText = '🌙 夜间模式';
-    }
-
-    localStorage.setItem('theme', theme);
-
-    // 刷新 ECharts 主题（重要）
-    setTimeout(() => {
-       rerenderChartsByTheme(); // ⭐ 只重绘样式
-    }, 50);
-}
-
-function toggleTheme() {
-    const isDark = document.documentElement.classList.contains('dark');
-	
-    applyTheme(isDark ? 'light' : 'dark');
-}
-
-// 初始化主题
-(function initTheme() {
-    const saved = localStorage.getItem('theme');
-    if (saved) {
-        applyTheme(saved);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        applyTheme('dark');
-    }
-})();
-function rerenderChartsByTheme() {
-  if (!lastResults) return;
-
-  updateTrafficSection(lastResults);
-  updateRequestsSection(lastResults);
-  updateEdgeFunctionsSection(lastResults);
-  updateTopAnalysisSection(lastResults);
-}
-
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            applyTheme(isDark ? 'light' : 'dark');
+        }
+		
+        function rerenderChartsByTheme() {
+          if (!lastResults) return;
+          updateTrafficSection(lastResults);
+          updateRequestsSection(lastResults);
+          updateEdgeFunctionsSection(lastResults);
+          updateTopAnalysisSection(lastResults);
+        }
     </script>
 </body>
 </html>
