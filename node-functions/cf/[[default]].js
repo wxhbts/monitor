@@ -84,16 +84,21 @@ const METRIC_MAP = {
         scope: "zone",
     },
 };
-
+const ZONE_TOPN_CONFIG = {
+    l7Flow_request_sip: "clientIP",
+    l7Flow_request_ua_device: "clientRequestHTTPMethodName",
+    l7Flow_request_ua_browser: "cacheStatus",
+	l7Flow_request_zym: "clientRequestHTTPHost",
+};
 // --- 2. 辅助函数：获取凭证 ---
 function getKeys() {
     let secretId = process.env.CFSECRET_ID;
     let secretKey = process.env.CFSECRET_KEY;
     let accountTag = process.env.CFACCOUNT_TAG;
-	let zonetag = process.env.CFZONE_TAG;
+    let zonetag = process.env.CFZONE_TAG;
 
-    if (secretId && secretKey && accountTag&& zonetag)
-        return { secretId, secretKey, accountTag,zonetag };
+    if (secretId && secretKey && accountTag && zonetag)
+        return { secretId, secretKey, accountTag, zonetag };
 
     try {
         const keyPath = path.resolve(process.cwd(), "key.txt");
@@ -106,13 +111,13 @@ function getKeys() {
                 if (line.includes("cfid")) secretId = trimmedVal;
                 if (line.includes("cfkey")) secretKey = trimmedVal;
                 if (line.includes("cfuserid")) accountTag = trimmedVal;
-				if (line.includes("zonetag")) zonetag = trimmedVal;
+                if (line.includes("zonetag")) zonetag = trimmedVal;
             });
         }
     } catch (err) {
         console.error("Error reading key.txt:", err);
     }
-    return { secretId, secretKey, accountTag ,zonetag};
+    return { secretId, secretKey, accountTag, zonetag };
 }
 
 // --- 3. 辅助函数：获取 Zone ID 和 域名映射 ---
@@ -189,118 +194,57 @@ function getTimeConfig(reqStartTime, reqEndTime) {
 app.get("/traffic", async (req, res) => {
     try {
         // 5.1 基础校验
-        const { secretId, secretKey, accountTag ,zonetag} = getKeys();
+        const { secretId, secretKey, accountTag, zonetag } = getKeys();
         if (!secretId || !secretKey || !accountTag || !zonetag) {
             return res.status(401).json({ error: "Missing credentials" });
         }
 
         const metricParam = req.query.metric;
 
-        if (metricParam === "l7Flow_request_sip") {
-            const timeCfg = getTimeConfig(
-                req.query.startTime,
-                req.query.endTime
-            );
+         if (ZONE_TOPN_CONFIG[metricParam]) {
+            const targetField = ZONE_TOPN_CONFIG[metricParam];
+            const timeCfg = getTimeConfig(req.query.startTime, req.query.endTime);
+            // 动态构建 GraphQL 查询
             const query = `
             query{
-            viewer {
-                zones(filter: { zoneTag: "${zonetag}" }) {
-                    httpRequestsAdaptive(
-                        limit: 10000,
-                        filter: {
-                            datetime_geq: "${timeCfg.queryFrom}",
-                            datetime_lt: "${timeCfg.queryTo}"
+                viewer {
+                    zones(filter: { zoneTag: "${zonetag}" }) {
+                        httpRequestsAdaptiveGroups(
+                            limit: 10,
+                            orderBy: [count_DESC],
+                            filter: {
+                                datetime_geq: "${timeCfg.queryFrom}",
+                                datetime_lt: "${timeCfg.queryTo}"
+                            }
+                        ) {
+                             count
+                            dimensions {
+                                ${targetField}
+                            }
                         }
-                    ) {
-                        clientIP
                     }
                 }
-            }
-		}
-`;
-
-            const response = await fetch(
-                "https://api.cloudflare.com/client/v4/graphql",
-                {
-                    method: "POST",
-                    headers: {
-                        "X-Auth-Email": secretId,
-                        "X-Auth-Key": secretKey,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        query,
-                    }),
-                }
-            );
-
+            }`;
+            const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+                method: "POST",
+                headers: { "X-Auth-Email": secretId, "X-Auth-Key": secretKey, "Content-Type": "application/json" },
+                body: JSON.stringify({ query }),
+            });
             const apiData = await response.json();
-            const ipList =
-                apiData.data.viewer.zones[0].httpRequestsAdaptive.map(
-                    (item) => item.clientIP
-                );
-            const ipCount = ipList.reduce((acc, ip) => {
-                acc[ip] = (acc[ip] || 0) + 1;
-                return acc;
-            }, {});
-            const detailData = Object.entries(ipCount)
-                .map(([Key, Value]) => ({ Key, Value }))
-                .sort((a, b) => b.Value - a.Value); // 从大到小排序
-            const result = { Data: [{ DetailData: detailData }] };
-            return res.json(result);
-        }
-        if (metricParam === "l7Flow_request_zym") {
-            const timeCfg = getTimeConfig(
-                req.query.startTime,
-                req.query.endTime
-            );
-            const query = `
-            query{
-            viewer {
-                zones(filter: { zoneTag: "${zonetag}" }) {
-                    httpRequestsAdaptive(
-                        limit: 10000,
-                        filter: {
-                            datetime_geq: "${timeCfg.queryFrom}",
-                            datetime_lt: "${timeCfg.queryTo}"
-                        }
-                    ) {
-                        clientRequestHTTPHost
-                    }
-                }
+            
+            // 增加 API 错误检查
+            if (apiData.errors) {
+                console.error("GraphQL Errors:", apiData.errors);
+                return res.status(400).json(apiData);
             }
-		}
-`;
-
-            const response = await fetch(
-                "https://api.cloudflare.com/client/v4/graphql",
-                {
-                    method: "POST",
-                    headers: {
-                        "X-Auth-Email": secretId,
-                        "X-Auth-Key": secretKey,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        query,
-                    }),
-                }
-            );
-
-            const apiData = await response.json();
-            const ipList =
-                apiData.data.viewer.zones[0].httpRequestsAdaptive.map(
-                    (item) => item.clientRequestHTTPHost
-                );
-            const ipCount = ipList.reduce((acc, ip) => {
-                acc[ip] = (acc[ip] || 0) + 1;
-                return acc;
-            }, {});
-            const detailData = Object.entries(ipCount)
-                .map(([Key, Value]) => ({ Key, Value }))
-                .sort((a, b) => b.Value - a.Value); // 从大到小排序
-            const result = { Data: [{ DetailData: detailData }] };
-            return res.json(result);
+            const groups = apiData.data.viewer.zones[0].httpRequestsAdaptiveGroups;
+            
+            // 统一的数据清洗逻辑
+            const detailData = groups.map(group => ({
+                Key: group.dimensions[targetField],
+                Value: group.count
+            }));
+            return res.json({ Data: [{ DetailData: detailData }] });
         }
 
         const config = METRIC_MAP[metricParam];
