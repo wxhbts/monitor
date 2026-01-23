@@ -154,6 +154,8 @@ html.dark {
          focus-visible:ring-ring">
                     <option value="3h">近 3 小时</option>
                     <option value="6h">近 6 小时</option>
+					<option value="12h">近 12 小时</option>
+					<option value="24h">近 24 小时</option>
                     <option value="today">今日</option>
                     <option value="yesterday">昨日</option>
                     <option value="3d">近 3 天</option>
@@ -456,13 +458,29 @@ html.dark {
                         <div class="p-6 pt-0">
                             <div id="chart_top_request_sip" class="w-full h-[500px]"></div>
                         </div>
-                    </div>
+                    </div>					
 					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold leading-none tracking-tight">子域名请求数排行</h3>
                         </div>
                         <div class="p-6 pt-0">
                             <div id="chart_top_request_zym" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">请求方法数排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_ua_device" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">缓存状态请求数排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_ua_browser" class="w-full h-[500px]"></div>
                         </div>
                     </div>
                 </div>
@@ -490,6 +508,8 @@ html.dark {
         let chartTopRequestResourceType = null;
 		let chartTopRequestSip = null;
 		let chartTopRequestzym = null;
+		let chartTopRequestUaDevice = null;
+		let chartTopRequestUaBrowser = null;
 
         const countryMap = {
             'CN': '中国大陆', 'AF': '阿富汗', 'MV': '马尔代夫', 'AM': '亚美尼亚', 'MN': '蒙古', 'AZ': '阿塞拜疆',
@@ -586,7 +606,7 @@ html.dark {
             topAnalysis: [
                 'l7Flow_outFlux_country', 'l7Flow_request_country',
                 'l7Flow_outFlux_domain', 'l7Flow_request_domain',
-                'l7Flow_outFlux_resourceType', 'l7Flow_request_resourceType','l7Flow_request_sip','l7Flow_request_zym'
+                'l7Flow_outFlux_resourceType', 'l7Flow_request_resourceType','l7Flow_request_sip','l7Flow_request_zym','l7Flow_request_ua_device','l7Flow_request_ua_browser'
             ]
         };
 
@@ -606,7 +626,9 @@ html.dark {
 			'l7Flow_request_zym': '子域名请求数',
             'l7Flow_request_resourceType': '资源类型请求数',
 			'function_requestCount': '函数请求数',
-            'function_cpuCostTime': '函数CPU耗时'
+            'function_cpuCostTime': '函数CPU耗时',
+			'l7Flow_request_ua_device': '请求方法请求数',
+			'l7Flow_request_ua_browser': '缓存状态请求数'
         };
 
         const metricColors = {
@@ -625,7 +647,9 @@ html.dark {
             'l7Flow_request_domain': '#06b6d4', // cyan
             'l7Flow_request_resourceType': '#f59e0b', // amber
 			'l7Flow_request_sip': '#8b5cf6', // purple
-			'l7Flow_request_zym': '#8b5cf6' // purple
+			'l7Flow_request_zym': '#8b5cf6', // purple
+			'l7Flow_request_ua_browser': '#10b981',
+			'l7Flow_request_ua_device': '#06b6d4' // cyan
         };
 
         /** Tool Functions **/
@@ -657,6 +681,8 @@ html.dark {
                 
                 case '3h': startTime = new Date(now.getTime() - 3 * 60 * 60 * 1000); break;
                 case '6h': startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000); break;
+				case '12h': startTime = new Date(now.getTime() - 12 * 60 * 60 * 1000); break;
+				case '24h': startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); break;
                 case 'today': 
                     startTime = new Date(now);
                     startTime.setHours(0, 0, 0, 0);
@@ -930,7 +956,8 @@ html.dark {
             chartTopRequestResourceType = echarts.init(document.getElementById('chart_top_request_resource_type'));
             chartFunctionRequests = echarts.init(document.getElementById('chart_function_requests'));
             chartFunctionCpu = echarts.init(document.getElementById('chart_function_cpu'));
-            
+            chartTopRequestUaDevice = echarts.init(document.getElementById('chart_top_request_ua_device'));
+			chartTopRequestUaBrowser = echarts.init(document.getElementById('chart_top_request_ua_browser'));
 			await refreshData();
         }
 
@@ -1562,6 +1589,8 @@ html.dark {
             renderTopChart(results, chartTopRequestResourceType, 'l7Flow_request_resourceType');
 			renderTopChart(results, chartTopRequestSip, 'l7Flow_request_sip');
 			renderTopChart(results, chartTopRequestzym, 'l7Flow_request_zym');
+			renderTopChart(results, chartTopRequestUaDevice, 'l7Flow_request_ua_device');
+			renderTopChart(results, chartTopRequestUaBrowser, 'l7Flow_request_ua_browser');
         }
 
         // Handle Resize
@@ -1582,6 +1611,8 @@ html.dark {
 			chartTopRequestzym && chartTopRequestzym.resize();
 			chartFunctionRequests && chartFunctionRequests.resize();
             chartFunctionCpu && chartFunctionCpu.resize();
+			chartTopRequestUaDevice && chartTopRequestUaDevice.resize();
+			chartTopRequestUaBrowser && chartTopRequestUaBrowser.resize();
         });
 
         // Start - Entrance
