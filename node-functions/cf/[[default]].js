@@ -84,12 +84,23 @@ const METRIC_MAP = {
         scope: "zone",
     },
 };
+
+// --- 整合后的 Zone TopN 配置 ---
+// 结构：Key -> 目标字段
+// 逻辑通过 Key 是否包含 "_byte" 后缀来判断是取流量还是取请求数
 const ZONE_TOPN_CONFIG = {
     l7Flow_request_sip: "clientIP",
     l7Flow_request_ua_device: "clientRequestHTTPMethodName",
     l7Flow_request_ua_browser: "cacheStatus",
-	l7Flow_request_zym: "clientRequestHTTPHost",
+    l7Flow_request_zym: "clientRequestHTTPHost",
+    
+    // Byte 版本
+    l7Flow_outFlux_sip_byte: "clientIP",
+    l7Flow_outFlux_ua_device_byte: "clientRequestHTTPMethodName",
+    l7Flow_outFlux_ua_browser_byte: "cacheStatus",
+    l7Flow_outFlux_zym_byte: "clientRequestHTTPHost",
 };
+
 // --- 2. 辅助函数：获取凭证 ---
 function getKeys() {
     let secretId = process.env.CFSECRET_ID;
@@ -201,10 +212,23 @@ app.get("/traffic", async (req, res) => {
 
         const metricParam = req.query.metric;
 
-         if (ZONE_TOPN_CONFIG[metricParam]) {
+        // --- 整合后的 Zone TopN 逻辑 (支持 Count 和 Byte) ---
+        if (ZONE_TOPN_CONFIG[metricParam]) {
             const targetField = ZONE_TOPN_CONFIG[metricParam];
             const timeCfg = getTimeConfig(req.query.startTime, req.query.endTime);
-            // 动态构建 GraphQL 查询
+            
+            // 判定逻辑：判断 Key 是否以 "_byte" 结尾
+            const isByte = metricParam.endsWith("_byte");
+            
+            // 构建动态 GraphQL 查询
+            // 如果是请求数(count)，只取 count 字段；如果是流量(bytes)，额外请求 sum { edgeResponseBytes }
+            const sumSelection = isByte 
+                ? `
+							sum { 
+								edgeResponseBytes 
+							}` 
+                : "";
+
             const query = `
             query{
                 viewer {
@@ -217,14 +241,15 @@ app.get("/traffic", async (req, res) => {
                                 datetime_lt: "${timeCfg.queryTo}"
                             }
                         ) {
-                             count
+                            count
                             dimensions {
                                 ${targetField}
-                            }
+                            }${sumSelection}
                         }
                     }
                 }
             }`;
+
             const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
                 method: "POST",
                 headers: { "X-Auth-Email": secretId, "X-Auth-Key": secretKey, "Content-Type": "application/json" },
@@ -239,10 +264,10 @@ app.get("/traffic", async (req, res) => {
             }
             const groups = apiData.data.viewer.zones[0].httpRequestsAdaptiveGroups;
             
-            // 统一的数据清洗逻辑
+            // 统一的数据清洗逻辑：根据 isByte 决定 Value 的来源
             const detailData = groups.map(group => ({
                 Key: group.dimensions[targetField],
-                Value: group.count
+                Value: isByte ? group.sum.edgeResponseBytes : group.count
             }));
             return res.json({ Data: [{ DetailData: detailData }] });
         }
@@ -297,7 +322,7 @@ app.get("/traffic", async (req, res) => {
                         variables: {
                             zoneIds,
                             from: timeCfg.queryFrom,
-                            to: timeCfg.queryTo, // 实际上原query只用了from, 如需严格需在query中加入to
+                            to: timeCfg.queryTo,
                         },
                     }),
                 }
@@ -419,26 +444,23 @@ app.get("/traffic", async (req, res) => {
             if (!accounts || accounts.length === 0)
                 return res.json({ Data: [] });
 
-            // 统一获取结果数组 (在query中别名为 resultData)
+            // 统一获取结果数组
             const resultData = accounts[0].resultData || [];
 
             // 处理分布数据返回 (Country / ResourceType)
             if (config.isDistribution) {
                 const detailData = resultData.map((item) => ({
-                    Key: item.dimensions[config.dimension], // 动态获取维度值
+                    Key: item.dimensions[config.dimension],
                     Value: item.sum[config.sumid],
                 }));
-                // 排序
                 detailData.sort((a, b) => b.Value - a.Value);
 
                 return res.json({ Data: [{ DetailData: detailData }] });
             }
 
             // 处理时间序列数据返回 (Trend)
-            // 如果有多个 locationTotals (比如按天/按小时)，这里做一个简单的时间轴合并
             const merged = {};
 
-            // 注意：当前查询只取了 accounts[0]，如果后续有分页需求需调整
             resultData.forEach((item) => {
                 const timeValue = item.dimensions[dimensionMode];
                 const ts = Math.floor(Date.parse(timeValue) / 1000);
@@ -451,7 +473,7 @@ app.get("/traffic", async (req, res) => {
                     Timestamp: parseInt(ts, 10),
                     Value: value,
                 }));
-            // ===== 仅在「>3天」且为 function_* 时，小时 → 天 =====
+
             const isFunctionMetric =
                 metricParam === "function_requestCount" ||
                 metricParam === "function_cpuCostTime";
@@ -462,7 +484,6 @@ app.get("/traffic", async (req, res) => {
                 const dayMerged = {};
 
                 detail.forEach((item) => {
-                    // Timestamp 是秒，转 UTC 日期
                     const day = new Date(item.Timestamp * 1000)
                         .toISOString()
                         .slice(0, 10); // YYYY-MM-DD
@@ -473,7 +494,6 @@ app.get("/traffic", async (req, res) => {
                 finalDetail = Object.entries(dayMerged)
                     .sort((a, b) => a[0].localeCompare(b[0]))
                     .map(([day, value]) => ({
-                        // 用当天 00:00 UTC 作为时间戳
                         Timestamp: Math.floor(
                             Date.parse(day + "T00:00:00Z") / 1000
                         ),
