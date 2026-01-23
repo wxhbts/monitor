@@ -453,12 +453,28 @@ html.dark {
                     </div>
 					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">客户端IP流量数排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_sip_byte" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold leading-none tracking-tight">客户端IP请求数排行</h3>
                         </div>
                         <div class="p-6 pt-0">
                             <div id="chart_top_request_sip" class="w-full h-[500px]"></div>
                         </div>
-                    </div>					
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">子域名流量排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_zym_byte" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
 					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold leading-none tracking-tight">子域名请求数排行</h3>
@@ -469,10 +485,26 @@ html.dark {
                     </div>
 					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
                         <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">请求方法流量排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_ua_device_byte" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
                             <h3 class="font-semibold leading-none tracking-tight">请求方法数排行</h3>
                         </div>
                         <div class="p-6 pt-0">
                             <div id="chart_top_request_ua_device" class="w-full h-[500px]"></div>
+                        </div>
+                    </div>
+					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                        <div class="flex flex-col space-y-1.5 p-6">
+                            <h3 class="font-semibold leading-none tracking-tight">缓存状态流量排行</h3>
+                        </div>
+                        <div class="p-6 pt-0">
+                            <div id="chart_top_request_ua_browser_byte" class="w-full h-[500px]"></div>
                         </div>
                     </div>
 					<div class="rounded-xl border bg-card text-card-foreground shadow-sm">
@@ -510,6 +542,11 @@ html.dark {
 		let chartTopRequestzym = null;
 		let chartTopRequestUaDevice = null;
 		let chartTopRequestUaBrowser = null;
+		
+		let chartTopRequestSipbyte = null;
+		let chartTopRequestzymbyte = null;
+		let chartTopRequestUaDevicebyte = null;
+		let chartTopRequestUaBrowserbyte = null;
 
         const countryMap = {
             'CN': '中国大陆', 'AF': '阿富汗', 'MV': '马尔代夫', 'AM': '亚美尼亚', 'MN': '蒙古', 'AZ': '阿塞拜疆',
@@ -606,7 +643,7 @@ html.dark {
             topAnalysis: [
                 'l7Flow_outFlux_country', 'l7Flow_request_country',
                 'l7Flow_outFlux_domain', 'l7Flow_request_domain',
-                'l7Flow_outFlux_resourceType', 'l7Flow_request_resourceType','l7Flow_request_sip','l7Flow_request_zym','l7Flow_request_ua_device','l7Flow_request_ua_browser'
+                'l7Flow_outFlux_resourceType', 'l7Flow_request_resourceType','l7Flow_outFlux_sip_byte','l7Flow_request_sip','l7Flow_outFlux_zym_byte','l7Flow_request_zym','l7Flow_outFlux_ua_device_byte','l7Flow_request_ua_device','l7Flow_outFlux_ua_browser_byte','l7Flow_request_ua_browser'
             ]
         };
 
@@ -628,7 +665,11 @@ html.dark {
 			'function_requestCount': '函数请求数',
             'function_cpuCostTime': '函数CPU耗时',
 			'l7Flow_request_ua_device': '请求方法请求数',
-			'l7Flow_request_ua_browser': '缓存状态请求数'
+			'l7Flow_request_ua_browser': '缓存状态请求数',
+			'l7Flow_outFlux_sip_byte': '客户端IP流量',
+			'l7Flow_outFlux_ua_browser_byte': '缓存状态流量',
+			'l7Flow_outFlux_ua_device_byte': '请求方法流量',
+			'l7Flow_outFlux_zym_byte': '子域名流量'
         };
 
         const metricColors = {
@@ -648,8 +689,12 @@ html.dark {
             'l7Flow_request_resourceType': '#f59e0b', // amber
 			'l7Flow_request_sip': '#8b5cf6', // purple
 			'l7Flow_request_zym': '#8b5cf6', // purple
-			'l7Flow_request_ua_browser': '#10b981',
-			'l7Flow_request_ua_device': '#06b6d4' // cyan
+			'l7Flow_request_ua_browser': '#10b981',// cyan
+			'l7Flow_request_ua_device': '#06b6d4',
+			'l7Flow_request_sip_byte': '#8b5cf6',
+			'l7Flow_request_ua_browser_byte': '#10b981',
+			'l7Flow_request_ua_device_byte': '#06b6d4',
+			'l7Flow_request_zym_byte': '#8b5cf6'		
         };
 
         /** Tool Functions **/
@@ -958,6 +1003,11 @@ html.dark {
             chartFunctionCpu = echarts.init(document.getElementById('chart_function_cpu'));
             chartTopRequestUaDevice = echarts.init(document.getElementById('chart_top_request_ua_device'));
 			chartTopRequestUaBrowser = echarts.init(document.getElementById('chart_top_request_ua_browser'));
+			
+			chartTopRequestSipbyte = echarts.init(document.getElementById('chart_top_request_sip_byte'));
+			chartTopRequestzymbyte = echarts.init(document.getElementById('chart_top_request_zym_byte'));
+			chartTopRequestUaDevicebyte = echarts.init(document.getElementById('chart_top_request_ua_device_byte'));
+			chartTopRequestUaBrowserbyte = echarts.init(document.getElementById('chart_top_request_ua_browser_byte'));
 			await refreshData();
         }
 
@@ -1591,6 +1641,11 @@ html.dark {
 			renderTopChart(results, chartTopRequestzym, 'l7Flow_request_zym');
 			renderTopChart(results, chartTopRequestUaDevice, 'l7Flow_request_ua_device');
 			renderTopChart(results, chartTopRequestUaBrowser, 'l7Flow_request_ua_browser');
+			
+			renderTopChart(results, chartTopRequestSipbyte, 'l7Flow_outFlux_sip_byte');
+			renderTopChart(results, chartTopRequestzymbyte, 'l7Flow_outFlux_zym_byte');
+			renderTopChart(results, chartTopRequestUaDevicebyte, 'l7Flow_outFlux_ua_device_byte');
+			renderTopChart(results, chartTopRequestUaBrowserbyte, 'l7Flow_outFlux_ua_browser_byte');
         }
 
         // Handle Resize
@@ -1613,6 +1668,11 @@ html.dark {
             chartFunctionCpu && chartFunctionCpu.resize();
 			chartTopRequestUaDevice && chartTopRequestUaDevice.resize();
 			chartTopRequestUaBrowser && chartTopRequestUaBrowser.resize();
+			
+			chartTopRequestSipbyte && chartTopRequestSipbyte.resize();
+			chartTopRequestzymbyte && chartTopRequestzymbyte.resize();
+			chartTopRequestUaDevicebyte && chartTopRequestUaDevicebyte.resize();
+			chartTopRequestUaBrowserbyte && chartTopRequestUaBrowserbyte.resize();
         });
 
         // Start - Entrance
