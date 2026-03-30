@@ -72,7 +72,7 @@ function getKeys() {
 
 const percentEncode = (str) => 
     encodeURIComponent(str)
-        。replace(/\+/g, '%20').replace(/\*/g, '%2A')
+        .replace(/\+/g, '%20').replace(/\*/g, '%2A')
         .replace(/%7E/g, '~');
 
 async function calculateSignature(secretKey, stringToSign) {
@@ -140,7 +140,7 @@ app.get('/traffic', async (req, res) => {
 
         if (apiData.Data && apiData.Data.length > 0) {
             if (config.type === 'TSS') {
-            // vvvvv 仅处理 TimeSeries 类型 vvvvv
+                // vvvvv 仅处理 TimeSeries 类型 vvvvv
 			const metricKey = 'l7Flow_inFlux';
 
 			// 1. 找到需要的那条维度
@@ -167,7 +167,7 @@ app.get('/traffic', async (req, res) => {
 			  }]
 			}];
 
-				// 5. 清理旧字段
+			// 5. 清理旧字段
 				delete apiData.SummarizedData;
             }
 			if (config.type === 'TS') {
