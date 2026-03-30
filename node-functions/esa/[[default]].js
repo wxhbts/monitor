@@ -10,7 +10,7 @@ const METRIC_CONFIG = {
     // 序列数据 (TimeSeries)
     'l7Flow_flux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'ALL', type: 'TS' },
     'l7Flow_inFlux': { action: 'DescribeSiteTimeSeriesData', field: 'RequestTraffic', dimension: 'ALL', type: 'TS' },
-    'l7Flow_outFlux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'ALL', type: 'TS' },
+    'l7Flow_outFlux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'EdgeCacheStatus', type: 'TS' },
     'l7Flow_request': { action: 'DescribeSiteTimeSeriesData', field: 'Requests', dimension: 'ALL', type: 'TS' },
 
     // Top 数据 (TopData) - 归类处理
@@ -139,7 +139,38 @@ app.get('/traffic', async (req, res) => {
         // --- 4. 数据转换逻辑 ---
 
         if (apiData.Data && apiData.Data.length > 0) {
-            if (config.type === 'TS') {
+            if (config.type === 'TSS') {
+            // vvvvv 仅处理 TimeSeries 类型 vvvvv
+			const metricKey = 'l7Flow_inFlux';
+
+			// 1. 找到需要的那条维度
+			const hitData = apiData.Data.find(d => d.DimensionValue === 'HIT');
+
+			// 2. 将明细转成 {Value,Timestamp}
+			const detailList = (hitData?.DetailData || []).map(item => ({
+			  Value: item.Value || 0,
+			  Timestamp: Math.floor(new Date(item.TimeStamp).getTime() / 1000)
+			}));
+
+			// 3. 取汇总值
+			const sumVal = apiData.SummarizedData?.find(s => s.DimensionValue === 'HIT')?.Value || 0;
+
+			// 4. 重构最外层
+			apiData.Data = [{
+			  DimensionValue: 'ALL',
+			  FieldName:   'RequestTraffic',
+			  DimensionName: 'ALL',
+			  TypeValue: [{
+			    MetricName: metricKey,
+			    Sum:   sumVal,
+			    Detail: detailList
+			  }]
+			}];
+
+				// 5. 清理旧字段
+				delete apiData.SummarizedData;
+            }
+			if (config.type === 'TS') {
                 // 处理 TimeSeries 类型
                 const detailList = (apiData.Data[0].DetailData || []).map(item => ({
                     Value: item.Value || 0,
