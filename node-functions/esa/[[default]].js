@@ -10,7 +10,7 @@ const METRIC_CONFIG = {
     // 序列数据 (TimeSeries)
     'l7Flow_flux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'ALL', type: 'TS' },
     'l7Flow_inFlux': { action: 'DescribeSiteTimeSeriesData', field: 'RequestTraffic', dimension: 'ALL', type: 'TS' },
-    'l7Flow_outFlux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'EdgeCacheStatus', type: 'TS' },
+    'l7Flow_outFlux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'EdgeCacheStatus', type: 'TSS' },
     'l7Flow_request': { action: 'DescribeSiteTimeSeriesData', field: 'Requests', dimension: 'ALL', type: 'TS' },
 
     // Top 数据 (TopData) - 归类处理
@@ -72,7 +72,7 @@ function getKeys() {
 
 const percentEncode = (str) => 
     encodeURIComponent(str)
-        .replace(/\+/g, '%20').replace(/\*/g, '%2A')
+        。replace(/\+/g, '%20').replace(/\*/g, '%2A')
         .replace(/%7E/g, '~');
 
 async function calculateSignature(secretKey, stringToSign) {
