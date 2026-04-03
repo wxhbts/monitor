@@ -12,6 +12,9 @@ const METRIC_CONFIG = {
     'l7Flow_inFlux': { action: 'DescribeSiteTimeSeriesData', field: 'RequestTraffic', dimension: 'ALL', type: 'TS' },
     'l7Flow_outFlux': { action: 'DescribeSiteTimeSeriesData', field: 'Traffic', dimension: 'EdgeCacheStatus', type: 'TSS' },
     'l7Flow_request': { action: 'DescribeSiteTimeSeriesData', field: 'Requests', dimension: 'ALL', type: 'TS' },
+	
+	'l7Flow_waf': { action: 'DescribeSiteTimeSeriesData', field: 'Requests', dimension: 'ALL', type: 'TS' },
+	
 
     // Top 数据 (TopData) - 归类处理
     'l7Flow_request_country': { field: 'Requests', dimension: 'ClientCountryCode' },
@@ -106,6 +109,9 @@ app.get('/traffic', async (req, res) => {
             Action: config.action,
             EndTime: req.query.endTime || formatISO(now),
             Fields: JSON.stringify([{ FieldName: config.field, Dimension: [config.dimension] }]),
+			...(metricKey === 'l7Flow_waf' && {
+			Filter: JSON.stringify({ where: { and:[{ key:'MitigationType', operator:'in', value:['WafMitigated'] }] } })
+			}),
             Format: 'json',
             Interval: req.query.interval || "60",
             Limit: req.query.Limit || "10",
@@ -141,7 +147,7 @@ app.get('/traffic', async (req, res) => {
         if (apiData.Data && apiData.Data.length > 0) {
             if (config.type === 'TSS') {
                 // vvvvv 仅处理 TimeSeries 类型 vvvvv
-			const metricKey = 'l7Flow_inFlux';
+			const metricKey = 'l7Flow_outFlux';
 
 			// 1. 找到需要的那条维度
 			const hitData = apiData.Data.find(d => d.DimensionValue === 'HIT');
