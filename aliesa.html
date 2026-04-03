@@ -1092,7 +1092,7 @@
         }
 
         function getBestCountUnit(maxValue) {
-            if (maxValue < 1000) return { unit: '次', divisor: 1 };
+            if (maxValue < 9999) return { unit: '次', divisor: 1 };
             if (maxValue < 10000) return { unit: '千次', divisor: 1000 };
             if (maxValue < 100000000) return { unit: '万次', divisor: 10000 };
             return { unit: '亿次', divisor: 100000000 };
