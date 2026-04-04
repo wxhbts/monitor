@@ -1500,7 +1500,7 @@ async function refreshData() {
                              // Append '次' if not present in unit (formatCount returns unit, but we might want explicit '次')
                              // formatCount returns "1.23 万". "1.23 万次" sounds good.
                              // "500" -> "500 次".
-                             formattedVal = fVal + (fVal.includes('千') || fVal.includes('万') || fVal.includes('亿') ? '次' : ' 次');
+                             formattedVal = fVal + (fVal.includes('千') || fVal.includes('万') || fVal.includes('亿') ? '次' : '');
                          }
                          
                          return `${name}<br/>${param.marker}${label}: ${formattedVal}`;
@@ -1565,7 +1565,7 @@ async function refreshData() {
                     trigger: 'item',
                     formatter: function (params) {
                         const val = params.value;
-                        return `${params.name}<br/>请求数: ${val ? val.toLocaleString() : 0} 次`;
+                        return `${params.name}<br/>请求数: ${val ? val.toLocaleString() : 0}`;
                     }
                 },
                 visualMap: {
@@ -2248,7 +2248,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2294,7 +2294,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2340,7 +2340,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2386,7 +2386,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2435,7 +2435,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2484,7 +2484,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2530,7 +2530,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2591,7 +2591,7 @@ async function refreshData() {
                              if (key === '-') fullName = '字段不存在'; //直接访问
                              else fullName = key.replace(/`/g, '').trim();
                          }
-                         return `${fullName}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${fullName}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2640,7 +2640,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2686,7 +2686,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2732,7 +2732,7 @@ async function refreshData() {
                     axisPointer: { type: 'shadow' },
                     formatter: (params) => {
                          const param = params[0];
-                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${param.name}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -2781,7 +2781,7 @@ async function refreshData() {
                          // Find full UA string
                          const originalItem = sortedData.find((item, index) => index === (sortedData.length - 1 - param.dataIndex));
                          const fullName = originalItem ? originalItem.Key : param.name;
-                         return `${fullName}<br/>${param.marker}请求数: ${param.value.toLocaleString()} 次`;
+                         return `${fullName}<br/>${param.marker}请求数: ${param.value.toLocaleString()}`;
                     }
                 },
                 grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
